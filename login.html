@@ -1,12 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script>
-  // If no username is found in localStorage, send them back to the login page
-  if (!localStorage.getItem("username")) {
-    window.location.href = "login.html"; 
-  }
-</script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
@@ -227,4 +221,5 @@ function toggleMode() {
 }
 </script>
 </body>
+
 </html>
