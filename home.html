@@ -66,7 +66,7 @@
         transition: 0.3s ease;
     }
 
-    /* 2. NAVBAR & ADAPTIVE UNDERLINE */
+    /* 2. NAVBAR & NAVIGATION */
     .navbar { 
         background-color: var(--card-bg) !important; 
         border-bottom: 1px solid var(--border) !important;
@@ -87,48 +87,45 @@
     .nav-link.active::after {
         content: "";
         position: absolute;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        height: 3px;
+        bottom: 0; left: 0; width: 100%; height: 3px;
         background-color: var(--primary);
         border-radius: 10px;
     }
 
-    /* 3. HERO SECTION (REVERTED TO BEFORE) */
+    /* 3. HERO & BUTTONS */
     .text-gradient {
         background: linear-gradient(45deg, var(--primary), #6610f2);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
     }
 
-    .hero-blob {
-        transition: transform 0.5s ease;
-    }
+    .hero-blob { transition: transform 0.5s ease; }
     .hero-blob:hover { transform: scale(1.05) rotate(5deg); }
 
-    /* 4. BUTTONS */
     .btn-primary {
         background-color: var(--primary) !important;
         border: none !important;
         transition: 0.3s ease !important;
     }
-    .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
 
+    /* FIXED: Monthly View Button Colors */
     .btn-outline-dark {
-        border: 2px solid var(--border) !important;
+        border: 2px solid var(--text-main) !important;
         color: var(--text-main) !important;
+        background: transparent !important;
         transition: 0.3s ease !important;
     }
-    .btn-outline-dark:hover { background: var(--text-main) !important; color: var(--card-bg) !important; transform: translateY(-3px); }
+    .btn-outline-dark:hover { 
+        background: var(--text-main) !important; 
+        color: var(--card-bg) !important; 
+    }
 
-    /* 5. PROFILE DROPDOWN (HOVER FIX) */
+    /* 4. PROFILE DROPDOWN HOVERS (The Specific Fix) */
     .profile-menu { position: relative; cursor: pointer; }
     .profile-dropdown {
         display: none;
         position: absolute;
-        right: 0;
-        top: 100%;
+        right: 0; top: 100%;
         background: var(--card-bg);
         border: 1px solid var(--border);
         border-radius: 12px;
@@ -139,24 +136,24 @@
     }
     .profile-menu:hover .profile-dropdown { display: block; }
     
-    /* These selectors are now specific enough to beat Bootstrap */
     .dropdown-item {
         color: var(--text-main) !important;
         border-radius: 8px;
-        transition: all 0.2s ease !important;
+        transition: background 0.2s ease, color 0.2s ease !important;
     }
 
-    .profile-dropdown .settings-link:hover {
+    /* Target specifically to override Bootstrap defaults */
+    .profile-dropdown a.dropdown-item.settings-link:hover {
         background-color: var(--primary) !important;
-        color: white !important;
+        color: #fff !important;
     }
 
-    .profile-dropdown .logout-link:hover {
+    .profile-dropdown a.dropdown-item.logout-link:hover {
         background-color: #ef4444 !important;
-        color: white !important;
+        color: #fff !important;
     }
 
-    /* 6. RESPONSIVENESS */
+    /* 5. RESPONSIVENESS */
     @media (max-width: 991px) {
         .navbar-collapse {
             background: var(--card-bg);
