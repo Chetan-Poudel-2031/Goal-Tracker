@@ -9,7 +9,6 @@
     
     if (savedColor) {
         document.documentElement.style.setProperty('--primary', savedColor);
-        // This line fixes the 'Image-like' blob by updating the gradient variables in style.css
         document.documentElement.style.setProperty('--hive-primary', savedColor);
         
         const s = document.createElement('style');
@@ -17,23 +16,16 @@
             :root { 
                 --primary: ${savedColor} !important;
                 --hive-primary: ${savedColor} !important;
-                /* This re-builds the gradient style.css uses for the blob */
                 --primary-gradient: linear-gradient(135deg, ${savedColor} 0%, #a855f7 100%) !important;
             } 
             
-            /* Force Blob Shadow to match theme */
             .hero-blob { 
                 box-shadow: 0 20px 40px ${savedColor}44 !important; 
                 background: var(--primary-gradient) !important;
             }
 
-            /* Navbar Active Underline */
             .nav-link.active { border-bottom: 2px solid ${savedColor} !important; }
-
-            /* Profile Icon */
             .profile-icon { color: ${savedColor} !important; }
-            
-            /* Footer Hover */
             .footer-link:hover { color: ${savedColor} !important; }
         `;
         document.head.appendChild(s);
@@ -51,139 +43,121 @@
     <link href="css/styles.css" rel="stylesheet" />
     
     <style>
-    /* 1. Theme Variables (Matching your style.css logic) */
-    :root {
+    /* 1. CORE THEME & LAYOUT */
+    :root, [data-theme="light"] {
+        --background: #f8fafc;
+        --card-bg: #ffffff;
+        --text-main: #1e293b;
+        --border: #e2e8f0;
         --muted: #64748b;
     }
     [data-theme="dark"] {
+        --background: #0f172a;
+        --card-bg: #1e293b;
+        --text-main: #f1f5f9;
+        --border: #334155;
         --muted: #94a3b8;
     }
 
-    /* 2. Navigation Fixes */
+    body {
+        background-color: var(--background) !important;
+        color: var(--text-main);
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        transition: 0.3s ease;
+    }
+
+    /* 2. NAVBAR & ADAPTIVE UNDERLINE */
+    .navbar { 
+        background-color: var(--card-bg) !important; 
+        border-bottom: 1px solid var(--border) !important;
+    }
+
     .nav-link { 
         color: var(--text-main) !important; 
-        transition: 0.3s; 
-        padding-bottom: 5px !important; 
-        text-decoration: none !important; 
+        position: relative;
+        display: inline-block !important;
+        padding-bottom: 5px !important;
+        margin: 0 10px;
+        opacity: 0.7;
+        transition: 0.3s;
     }
-    .nav-link:not(.active) { opacity: 0.7; }
-    
-    /* 3. Profile & Username Overflow Fix */
-    .profile-menu { position: relative; display: inline-flex; align-items: center; }
+
+    .nav-link.active, .nav-link:hover { opacity: 1; }
+
+    .nav-link.active::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 3px;
+        background-color: var(--primary);
+        border-radius: 10px;
+    }
+
+    /* 3. HERO SECTION */
+    .text-gradient {
+        background: linear-gradient(45deg, var(--primary), #6610f2);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .hero-blob {
+        transition: transform 0.5s ease;
+    }
+    .hero-blob:hover { transform: scale(1.05) rotate(5deg); }
+
+    /* 4. BUTTONS */
+    .btn-primary {
+        background-color: var(--primary) !important;
+        border: none !important;
+        transition: 0.3s ease !important;
+    }
+    .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+
+    .btn-outline-dark {
+        border: 2px solid var(--border) !important;
+        color: var(--text-main) !important;
+        transition: 0.3s ease !important;
+    }
+    .btn-outline-dark:hover { background: var(--text-main) !important; color: var(--card-bg) !important; transform: translateY(-3px); }
+
+    /* 5. PROFILE DROPDOWN */
+    .profile-menu { position: relative; cursor: pointer; }
     .profile-dropdown {
-        min-width: 220px; /* Wider to prevent overflow */
-        width: max-content;
+        display: none;
+        position: absolute;
+        right: 0;
+        top: 100%;
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        z-index: 1000;
+        min-width: 200px;
         padding: 15px;
     }
+    .profile-menu:hover .profile-dropdown { display: block; }
     
-    #userDisp { 
-        display: inline-block;
-        max-width: 120px; /* Limits width of long names */
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis; 
-        font-weight: 800;
-        vertical-align: middle;
+    .dropdown-item {
+        color: var(--text-main);
+        border-radius: 8px;
+        padding: 8px 12px;
     }
+    .dropdown-item:hover { background: var(--background); color: var(--primary); }
 
-    /* 4. Footer Fixes */
-    .footer-link { 
-        color: var(--muted) !important; 
-        text-decoration: none !important; 
-        transition: 0.2s ease;
-        border: none !important; /* Removes any accidental underlines */
+    /* 6. RESPONSIVENESS */
+    @media (max-width: 991px) {
+        .navbar-collapse {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 15px;
+            border: 1px solid var(--border);
+        }
+        .nav-link { display: block !important; margin: 10px 0; }
+        .hero-blob { width: 180px !important; height: 180px !important; margin-top: 30px; }
     }
-    
-    footer .text-muted { color: var(--muted) !important; }
-
-    /* 5. Ensure the Circle Icon is White */
-    .hero-blob i {
-        color: white !important;
-        background: none !important;
-        -webkit-text-fill-color: white !important;
-    }
-    /* Monthly View Button - Initial State */
-.btn-outline-dark {
-    background-color: transparent !important;
-    /* Use a slightly darker border for light mode, and the theme border for dark */
-    border: 1.5px solid #cbd5e1 !important; 
-    color: var(--text-main) !important;
-    font-weight: 600 !important;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-}
-
-[data-theme="dark"] .btn-outline-dark {
-    border-color: var(--border) !important;
-}
-
-/* Hover State - "The Invert" */
-.btn-outline-dark:hover {
-    background-color: #000000 !important; /* Black background */
-    color: #ffffff !important;            /* White text */
-    border-color: #000000 !important;
-    transform: translateY(-3px);
-    box-shadow: 0 10px 20px rgba(0,0,0,0.15);
-}
-
-/* If you prefer the White-on-Hover look you mentioned earlier: */
-[data-theme="dark"] .btn-outline-dark:hover {
-    background-color: #ffffff !important;
-    color: #000000 !important;
-    border-color: #ffffff !important;
-}
-
-.btn-primary:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-    transition: all 0.3s ease !important;
-}
-.theme-badge {
-    background: var(--primary) !important;
-    color: #fff !important;
-    font-weight: 600;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}    
-
-.profile-dropdown {
-    background-color: var(--background) !important;
-    border: 1px solid var(--border) !important;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-    border-radius: 12px;
-}
-.profile-dropdown .notlogout{
-    color: var(--text-main) !important;
-    transition: background-color 0.2s ease;
-}
-.profile-dropdown .notlogout:hover {
-    background-color: var(--primary) !important;
-    color: #fff !important;
-}
-.logout-btn:hover {
-    background-color: #e53e3e !important;
-    color: #fff !important;
-    border-color: #e53e3e !important;
-}
-
-/* Navbar Toggler Icon Theme Sync */
-.navbar-toggler {
-    border-color: var(--border) !important;
-}
-
-/* In Light Mode (Default) */
-.navbar-toggler-icon {
-    filter: none;
-}
-
-/* In Dark Mode - Inverts the black icon to white */
-[data-theme="dark"] .navbar-toggler-icon {
-    filter: invert(1) grayscale(100%) brightness(200%);
-}
-
-/* Ensure the button itself doesn't have a weird background */
-.navbar-toggler:focus {
-    box-shadow: 0 0 0 0.25rem rgba(var(--primary-rgb), 0.25);
-    outline: none;
-}
 </style>
 </head>
 <body class="d-flex flex-column h-100">
@@ -204,17 +178,15 @@
                         <li class="nav-item"><a class="nav-link" href="checklist.html">Monthly</a></li>
                         <li class="nav-item"><a class="nav-link" href="progress.html">Progress</a></li>
                         
-                        <li class="nav-item dropdown ms-lg-3">
+                        <li class="nav-item ms-lg-3">
                             <div class="profile-menu">
-                                <i class="bi bi-person-circle fs-4 profile-icon text-primary"></i>
+                                <i class="bi bi-person-circle fs-4 profile-icon"></i>
                                 <div class="profile-dropdown">
-                                    <div class="p-3">
-                                        <small class="text-muted d-block">User</small>
-                                        <strong id="userDisp">Guest</strong>
-                                        <hr class="my-2">
-                                        <a href="setting.html" class="dropdown-item py-2 small notlogout"><i class="bi bi-gear me-2"></i>Settings</a>
-                                        <a href="#" onclick="logout()" class="dropdown-item py-2 small logout-btn"><i class="bi bi-box-arrow-right me-2"></i>Logout</a>
-                                    </div>
+                                    <small class="text-muted d-block">User</small>
+                                    <strong id="userDisp" style="color: var(--text-main)">Guest</strong>
+                                    <hr class="my-2">
+                                    <a href="setting.html" class="dropdown-item py-2 small"><i class="bi bi-gear me-2"></i>Settings</a>
+                                    <a href="#" onclick="logout()" class="dropdown-item py-2 small text-danger"><i class="bi bi-box-arrow-right me-2"></i>Logout</a>
                                 </div>
                             </div>
                         </li>
@@ -227,14 +199,14 @@
             <div class="container px-5">
                 <div class="row gx-5 align-items-center">
                     <div class="col-xxl-5 text-center text-xxl-start">
-                        <div class="badge theme-badge mb-3 px-3 py-2 rounded-pill">TRACK YOUR GROWTH</div>
+                        <div class="badge bg-primary mb-3 px-3 py-2 rounded-pill">TRACK YOUR GROWTH</div>
                         <h1 class="display-3 fw-bolder mb-4">
                             <span class="text-gradient d-inline">Stay Consistent,</span><br>
                             Build Better Habits
                         </h1>
                         <p class="lead text-muted mb-5">Join HabitHive to transform your daily routines into lasting achievements.</p>
                         <div class="d-grid gap-3 d-sm-flex justify-content-sm-center justify-content-xxl-start">
-                            <a class="btn btn-primary btn-lg px-5 py-3 rounded-4 shadow-sm " href="todo.html">Start Daily Tasks</a>
+                            <a class="btn btn-primary btn-lg px-5 py-3 rounded-4 shadow-sm" href="todo.html">Start Daily Tasks</a>
                             <a class="btn btn-outline-dark btn-lg px-5 py-3 rounded-4" href="checklist.html">Monthly View</a>
                         </div>
                     </div>
@@ -251,24 +223,14 @@
     </main>
 
     <footer class="py-4 mt-auto border-top">
-        <div class="container px-5">
-            <div class="row align-items-center justify-content-between flex-column flex-sm-row">
-                <div class="col-auto">
-                    <div class="small m-0 text-muted">Copyright &copy; 2026 HabitHive.</div>
-                </div>
-                <div class="col-auto">
-                    <a class="small footer-link" href="#!">Privacy</a>
-                    <span class="text-muted mx-1">&middot;</span>
-                    <a class="small footer-link" href="#!">Terms</a>
-                    <span class="text-muted mx-1">&middot;</span>
-                    <a class="small footer-link" href="contact.html">Contact</a>
-                </div>
-            </div>
+        <div class="container px-5 text-center">
+            <div class="small m-0 text-muted">Copyright &copy; 2026 HabitHive.</div>
         </div>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Init
         const firebaseConfig = { 
             apiKey: "AIzaSyA0uV1yU0QnEQbs2hV1UrCYdZZXYnhaxKs",
             authDomain: "habit-hive-c3a98.firebaseapp.com",
@@ -280,29 +242,23 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         
-        const currentUser = localStorage.getItem("username") || "guest";
+        const currentUser = localStorage.getItem("username") || "Guest";
         document.getElementById('userDisp').innerText = currentUser;
 
         function applyThemeLocally(color, mode) {
             document.documentElement.setAttribute('data-theme', mode);
             document.documentElement.style.setProperty('--primary', color);
-            
-            // Re-apply gradient logic
             document.querySelectorAll('.text-gradient').forEach(el => {
                 el.style.backgroundImage = `linear-gradient(45deg, ${color}, #6610f2)`;
             });
         }
 
-        // Fetch from Firebase for persistent cross-device sync
         db.collection("userSettings").doc(currentUser).get().then(doc => {
             if (doc.exists) {
                 const data = doc.data();
-                const color = data.themeColor || localStorage.getItem("themeColor") || "#4a90e2";
+                const color = data.themeColor || localStorage.getItem("themeColor") || "#6366f1";
                 const mode = data.displayMode || localStorage.getItem("displayMode") || "light";
-                
                 applyThemeLocally(color, mode);
-                localStorage.setItem("themeColor", color);
-                localStorage.setItem("displayMode", mode);
             }
         });
 
