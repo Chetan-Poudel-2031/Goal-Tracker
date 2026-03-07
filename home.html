@@ -200,11 +200,18 @@
                             <div class="profile-menu">
                                 <i class="bi bi-person-circle fs-4 profile-icon"></i>
                                 <div class="profile-dropdown">
-                                    <small class="text-muted d-block">User</small>
-                                    <strong id="userDisp" style="color: var(--text-main)">Guest</strong>
-                                    <hr class="my-2">
-                                    <a href="setting.html" class="dropdown-item py-2 small"><i class="bi bi-gear me-2"></i>Settings</a>
-                                    <a href="#" onclick="logout()" class="dropdown-item py-2 small text-danger"><i class="bi bi-box-arrow-right me-2"></i>Logout</a>
+                                    <div class="p-1"> <small class="text-muted d-block mb-1">User</small>
+                                        <strong id="userDisp" class="d-block mb-2" style="color: var(--text-main)">Guest</strong>
+                                        <hr class="my-2">
+                                        
+                                        <a href="setting.html" class="dropdown-item py-2 small settings-link">
+                                            <i class="bi bi-gear me-2"></i>Settings
+                                        </a>
+                                        
+                                        <a href="#" onclick="logout()" class="dropdown-item py-2 small logout-link">
+                                            <i class="bi bi-box-arrow-right me-2"></i>Logout
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                         </li>
