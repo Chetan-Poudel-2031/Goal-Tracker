@@ -95,7 +95,7 @@
         border-radius: 10px;
     }
 
-    /* 3. HERO SECTION & BLOB */
+    /* 3. HERO SECTION (REVERTED TO BEFORE) */
     .text-gradient {
         background: linear-gradient(45deg, var(--primary), #6610f2);
         -webkit-background-clip: text;
@@ -103,22 +103,8 @@
     }
 
     .hero-blob {
-        width: 250px;
-        height: 250px;
-        background: linear-gradient(45deg, var(--primary), #6610f2);
-        border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        animation: morphing 8s infinite alternate ease-in-out;
         transition: transform 0.5s ease;
     }
-    
-    @keyframes morphing {
-        0% { border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%; }
-        100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
-    }
-
     .hero-blob:hover { transform: scale(1.05) rotate(5deg); }
 
     /* 4. BUTTONS */
@@ -129,7 +115,14 @@
     }
     .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
 
-    /* 5. PROFILE DROPDOWN & HOVERS */
+    .btn-outline-dark {
+        border: 2px solid var(--border) !important;
+        color: var(--text-main) !important;
+        transition: 0.3s ease !important;
+    }
+    .btn-outline-dark:hover { background: var(--text-main) !important; color: var(--card-bg) !important; transform: translateY(-3px); }
+
+    /* 5. PROFILE DROPDOWN (HOVER FIX) */
     .profile-menu { position: relative; cursor: pointer; }
     .profile-dropdown {
         display: none;
@@ -146,16 +139,13 @@
     }
     .profile-menu:hover .profile-dropdown { display: block; }
     
+    /* These selectors are now specific enough to beat Bootstrap */
     .dropdown-item {
         color: var(--text-main) !important;
         border-radius: 8px;
-        padding: 8px 12px;
         transition: all 0.2s ease !important;
-        text-decoration: none;
-        display: block;
     }
 
-    /* SPECIFIC HOVER OVERRIDES */
     .profile-dropdown .settings-link:hover {
         background-color: var(--primary) !important;
         color: white !important;
@@ -176,7 +166,7 @@
             border: 1px solid var(--border);
         }
         .nav-link { display: block !important; margin: 10px 0; }
-        .hero-blob { width: 180px !important; height: 180px !important; }
+        .hero-blob { width: 180px !important; height: 180px !important; margin-top: 30px; }
     }
 </style>
 </head>
