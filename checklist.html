@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<script>
+    // 1. PREVENT FLASH: Apply theme and mode before page renders
+    const savedColor = localStorage.getItem("themeColor") || "#6366f1";
+    const savedMode = localStorage.getItem("displayMode") || "light";
+    document.documentElement.setAttribute('data-theme', savedMode);
+    
+    if (savedColor) {
+        document.documentElement.style.setProperty('--primary', savedColor);
+        const s = document.createElement('style');
+        s.innerHTML = `
+            :root{--primary:${savedColor}!important} 
+            #add-btn { background: ${savedColor}!important; }
+            .text-gradient { background: linear-gradient(45deg, ${savedColor}, #6610f2)!important; -webkit-background-clip: text!important; -webkit-text-fill-color: transparent!important; }
+            
+            /* Navbar Settings Link Color - Themed */
+            .settings-link { color: ${savedColor} !important; opacity: 0.9; transition: 0.3s; }
+            .settings-link:hover { opacity: 1; transform: scale(1.05); }
+            .bi-gear-fill { color: ${savedColor} !important; }
+
+            /* Regular Nav Links - Neutral */
+            .nav-link:not(.settings-link) { color: var(--text) !important; opacity: 0.7; }
+            .nav-link:not(.settings-link):hover, .nav-link.active { opacity: 1; }
+
+            /* Checkbox & Table Colors */
+            input[type="checkbox"] { border-color: ${savedColor}!important; }
+            input[type="checkbox"]::before { color: ${savedColor}!important; }
+            .total-col { color: ${savedColor}!important; }
+
+            /* Short Underline Aligned to the Left */
+/* Underline that matches text width */
+.nav-link {
+    display: inline-block !important; /* Forces the link to be only as wide as the text */
+    position: relative;
+    padding-bottom: 5px !important;
+}
+
+.nav-link.active::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%; /* Now matches the text width exactly */
+    height: 3px;
+    background-color: ${savedColor} !important;
+    border-radius: 10px;
+}
+        `;
+        document.head.appendChild(s);
+    }
+</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HabitHive | Checklist</title>
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script>
+      const firebaseConfig = {
+        apiKey: "AIzaSyA0uV1yU0QnEQbs2hV1UrCYdZZXYnhaxKs",
+        authDomain: "habit-hive-c3a98.firebaseapp.com",
+        projectId: "habit-hive-c3a98",
+        storageBucket: "habit-hive-c3a98.firebasestorage.app",
+        messagingSenderId: "872810952968",
+        appId: "1:872810952968:web:9075bc84022ad7310f94bd"
+      };
+      firebase.initializeApp(firebaseConfig);
+      const db = firebase.firestore();
+    </script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="css/styles.css">
+
+    <style>
+        :root {
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --border: #e2e8f0;
+            --table-header: #f1f5f9;
+            --input-bg: #f8fafc;
+        }
+
+        [data-theme="dark"] {
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --text: #f1f5f9;
+            --border: #334155;
+            --table-header: #0f172a;
+            --input-bg: #0f172a;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            transition: 0.3s;
+        }
+
+        .navbar { border-bottom: 1px solid var(--border); background: var(--card-bg); }
+
+        .containerchecklist {
+            max-width: 1200px;
+            margin: 40px auto;
+            background: var(--card-bg);
+            padding: 35px;
+            border-radius: 24px;
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        }
+
+        h2 { font-weight: 800; letter-spacing: -0.02em; }
+        h4 { color: #64748b; font-size: 0.95rem; margin-bottom: 30px; }
+
+        input[type="text"] {
+            flex-grow: 1;
+            padding: 14px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            background: var(--input-bg);
+            color: var(--text);
+            outline: none;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 15px;
+            border: 1px solid var(--border);
+        }
+
+        table { width: 100%; border-collapse: collapse; background: var(--card-bg); }
+
+        th, td {
+            border: 1px solid var(--border);
+            padding: 12px 8px;
+            text-align: center;
+        }
+
+        th { 
+            background: var(--table-header); 
+            font-weight: 700;
+            color: #64748b;
+            font-size: 0.75rem;
+        }
+
+        .task-name { 
+            position: sticky;
+            left: 0;
+            background: var(--card-bg) !important;
+            z-index: 2;
+            font-weight: 600;
+            text-align: left !important;
+            padding-left: 20px !important;
+            min-width: 180px;
+            border-right: 2px solid var(--border);
+        }
+
+        input[type="checkbox"] { 
+            cursor: pointer; width: 20px; height: 20px; appearance: none; -webkit-appearance: none;
+            background-color: transparent; border: 2px solid var(--primary); border-radius: 6px;
+            display: grid; place-content: center; margin: auto;
+        }
+
+        input[type="checkbox"]::before {
+            content: "\F26E"; font-family: "bootstrap-icons"; transform: scale(0);
+            transition: 120ms transform ease-in-out; font-size: 14px; font-weight: bold;
+        }
+
+        input[type="checkbox"]:checked::before { transform: scale(1); }
+
+        .delete-btn {
+            background: transparent; color: #ef4444; border: 1px solid #fee2e2;
+            padding: 6px 10px; border-radius: 8px; transition: 0.2s;
+        }
+        .delete-btn:hover { background: #ef4444; color: white; }
+
+        .navbar-nav .nav-item {
+    margin-right: 15px; /* Adds space between the links */
+}
+
+/* Ensure the active link doesn't have the old border anymore */
+.nav-link.active {
+    border-bottom: none !important;
+}
+
+        #taskInput:focus {
+            background-color: var(--card-bg) !important; /* Keeps background consistent */
+            color: var(--text) !important;               /* Keeps text readable */
+            border-color: var(--primary) !important;     /* Changes border to theme color */
+            outline: 0 !important;                       /* Removes default browser outline */
+            box-shadow: 0 0 0 0.25rem rgba(var(--primary-rgb), 0.25) !important;
+        }
+        #taskInput{transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out !important;}
+
+        /* Navbar Toggler Icon Theme Sync */
+.navbar-toggler {
+    border-color: var(--border) !important;
+}
+
+/* In Light Mode (Default) */
+.navbar-toggler-icon {
+    filter: none;
+}
+
+/* In Dark Mode - Inverts the black icon to white */
+[data-theme="dark"] .navbar-toggler-icon {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+/* Ensure the button itself doesn't have a weird background */
+.navbar-toggler:focus {
+    box-shadow: 0 0 0 0.25rem rgba(var(--primary-rgb), 0.25);
+    outline: none;
+}
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg sticky-top">
+    <div class="container px-5">
+        <a class="navbar-brand fw-800 text-gradient" href="home.html">HabitHive</a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav ms-auto mb-2 mb-lg-0 small fw-bolder">
+                <li class="nav-item"><a class="nav-link" href="home.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="todo.html">Daily</a></li>
+                <li class="nav-item"><a class="nav-link active" href="checklist.html">Monthly</a></li>
+                <li class="nav-item"><a class="nav-link" href="progress.html">Progress</a></li>
+                <li class="nav-item"><a class="nav-link settings-link" href="setting.html"><i class="bi bi-gear-fill"></i> Settings</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="containerchecklist">
+    <div class="header-top d-flex align-items-center justify-content-center position-relative mb-4">
+        <a href="home.html" class="position-absolute start-0 text-muted"><i class="bi bi-arrow-left fs-4"></i></a>
+        <h2 class="text-gradient m-0">Monthly Habit Tracker</h2>
+    </div>
+
+    <h4 class="text-center">View your monthly progress and stay consistent!</h4>
+    
+    <div class="input-group mb-4 d-flex gap-2 justify-content-center">
+        <input type="text" id="taskInput" placeholder="Enter a new habit..." style="max-width: 400px;">
+        <button id="add-btn" class="btn btn-primary px-4" style="border-radius: 12px; font-weight: 700;">Add Habit</button>
+    </div>
+
+    <div class="table-wrapper">
+        <table id="taskTable">
+            <thead>
+                <tr id="headerRow">
+                    <th class="task-name">Habit</th>
+                    <th class="total-col">Total</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="taskBody"></tbody>
+        </table>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const taskInput = document.getElementById('taskInput');
+    const addBtn = document.getElementById('add-btn');
+    const taskBody = document.getElementById('taskBody');
+    const headerRow = document.getElementById('headerRow');
+    const currentUser = localStorage.getItem("username") || "guest";
+
+    for (let i = 1; i <= 30; i++) {
+        const th = document.createElement('th');
+        th.innerText = i;
+        headerRow.insertBefore(th, headerRow.children[headerRow.children.length - 2]);
+    }
+
+    db.collection("monthlyTasks")
+      .where("owner", "==", currentUser)
+      .orderBy("createdAt", "asc")
+      .onSnapshot((snapshot) => {
+        taskBody.innerHTML = '';
+        snapshot.forEach((doc) => {
+            const task = doc.data();
+            const id = doc.id;
+            const row = document.createElement('tr');
+            const taskDays = task.days || new Array(30).fill(false);
+            let completedCount = 0;
+            let daysHtml = '';
+
+            taskDays.forEach((isChecked, index) => {
+                if(isChecked) completedCount++;
+                daysHtml += `<td>
+                    <input type="checkbox" ${isChecked ? 'checked' : ''} 
+                    onchange="toggleDay('${id}', ${index}, ${isChecked})">
+                </td>`;
+            });
+
+            row.innerHTML = `
+                <td class="task-name">${task.name}</td>
+                ${daysHtml}
+                <td class="total-col fw-bold">${completedCount}</td>
+                <td><button class="delete-btn" onclick="deleteTask('${id}')"><i class="bi bi-trash"></i></button></td>
+            `;
+            taskBody.appendChild(row);
+        });
+      });
+
+    const addNewTask = () => {
+        const name = taskInput.value.trim();
+        if (name) {
+            db.collection("monthlyTasks").add({
+                name: name,
+                days: new Array(30).fill(false),
+                owner: currentUser,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            taskInput.value = '';
+        }
+    };
+
+    addBtn.addEventListener('click', addNewTask);
+    taskInput.addEventListener("keydown", (e) => { if (e.key === "Enter") addNewTask(); });
+
+    window.toggleDay = async (taskId, dayIndex, currentVal) => {
+        const docRef = db.collection("monthlyTasks").doc(taskId);
+        const doc = await docRef.get();
+        if (doc.exists) {
+            const days = doc.data().days;
+            days[dayIndex] = !currentVal;
+            docRef.update({ days: days });
+        }
+    };
+
+    window.deleteTask = (id) => {
+        if(confirm('Remove this habit?')) {
+            db.collection("monthlyTasks").doc(id).delete();
+        }
+    };
+</script>
+</body>
+</html>

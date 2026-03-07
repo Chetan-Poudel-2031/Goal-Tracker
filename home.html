@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100" data-theme="light">
+<head>
+<script>
+    // 1. PREVENT FLASHING
+    const savedColor = localStorage.getItem("themeColor") || "#6366f1";
+    const savedMode = localStorage.getItem("displayMode") || "light";
+    document.documentElement.setAttribute('data-theme', savedMode);
+    
+    if (savedColor) {
+        document.documentElement.style.setProperty('--primary', savedColor);
+        // This line fixes the 'Image-like' blob by updating the gradient variables in style.css
+        document.documentElement.style.setProperty('--hive-primary', savedColor);
+        
+        const s = document.createElement('style');
+        s.innerHTML = `
+            :root { 
+                --primary: ${savedColor} !important;
+                --hive-primary: ${savedColor} !important;
+                /* This re-builds the gradient style.css uses for the blob */
+                --primary-gradient: linear-gradient(135deg, ${savedColor} 0%, #a855f7 100%) !important;
+            } 
+            
+            /* Force Blob Shadow to match theme */
+            .hero-blob { 
+                box-shadow: 0 20px 40px ${savedColor}44 !important; 
+                background: var(--primary-gradient) !important;
+            }
+
+            /* Navbar Active Underline */
+            .nav-link.active { border-bottom: 2px solid ${savedColor} !important; }
+
+            /* Profile Icon */
+            .profile-icon { color: ${savedColor} !important; }
+            
+            /* Footer Hover */
+            .footer-link:hover { color: ${savedColor} !important; }
+        `;
+        document.head.appendChild(s);
+    }
+</script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HabitHive | Home</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="css/styles.css" rel="stylesheet" />
+    
+    <style>
+    /* 1. Theme Variables (Matching your style.css logic) */
+    :root {
+        --muted: #64748b;
+    }
+    [data-theme="dark"] {
+        --muted: #94a3b8;
+    }
+
+    /* 2. Navigation Fixes */
+    .nav-link { 
+        color: var(--text-main) !important; 
+        transition: 0.3s; 
+        padding-bottom: 5px !important; 
+        text-decoration: none !important; 
+    }
+    .nav-link:not(.active) { opacity: 0.7; }
+    
+    /* 3. Profile & Username Overflow Fix */
+    .profile-menu { position: relative; display: inline-flex; align-items: center; }
+    .profile-dropdown {
+        min-width: 220px; /* Wider to prevent overflow */
+        width: max-content;
+        padding: 15px;
+    }
+    
+    #userDisp { 
+        display: inline-block;
+        max-width: 120px; /* Limits width of long names */
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis; 
+        font-weight: 800;
+        vertical-align: middle;
+    }
+
+    /* 4. Footer Fixes */
+    .footer-link { 
+        color: var(--muted) !important; 
+        text-decoration: none !important; 
+        transition: 0.2s ease;
+        border: none !important; /* Removes any accidental underlines */
+    }
+    
+    footer .text-muted { color: var(--muted) !important; }
+
+    /* 5. Ensure the Circle Icon is White */
+    .hero-blob i {
+        color: white !important;
+        background: none !important;
+        -webkit-text-fill-color: white !important;
+    }
+    /* Monthly View Button - Initial State */
+.btn-outline-dark {
+    background-color: transparent !important;
+    /* Use a slightly darker border for light mode, and the theme border for dark */
+    border: 1.5px solid #cbd5e1 !important; 
+    color: var(--text-main) !important;
+    font-weight: 600 !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+[data-theme="dark"] .btn-outline-dark {
+    border-color: var(--border) !important;
+}
+
+/* Hover State - "The Invert" */
+.btn-outline-dark:hover {
+    background-color: #000000 !important; /* Black background */
+    color: #ffffff !important;            /* White text */
+    border-color: #000000 !important;
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+}
+
+/* If you prefer the White-on-Hover look you mentioned earlier: */
+[data-theme="dark"] .btn-outline-dark:hover {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border-color: #ffffff !important;
+}
+
+.btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    transition: all 0.3s ease !important;
+}
+.theme-badge {
+    background: var(--primary) !important;
+    color: #fff !important;
+    font-weight: 600;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}    
+
+.profile-dropdown {
+    background-color: var(--background) !important;
+    border: 1px solid var(--border) !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    border-radius: 12px;
+}
+.profile-dropdown .notlogout{
+    color: var(--text-main) !important;
+    transition: background-color 0.2s ease;
+}
+.profile-dropdown .notlogout:hover {
+    background-color: var(--primary) !important;
+    color: #fff !important;
+}
+.logout-btn:hover {
+    background-color: #e53e3e !important;
+    color: #fff !important;
+    border-color: #e53e3e !important;
+}
+
+/* Navbar Toggler Icon Theme Sync */
+.navbar-toggler {
+    border-color: var(--border) !important;
+}
+
+/* In Light Mode (Default) */
+.navbar-toggler-icon {
+    filter: none;
+}
+
+/* In Dark Mode - Inverts the black icon to white */
+[data-theme="dark"] .navbar-toggler-icon {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+/* Ensure the button itself doesn't have a weird background */
+.navbar-toggler:focus {
+    box-shadow: 0 0 0 0.25rem rgba(var(--primary-rgb), 0.25);
+    outline: none;
+}
+</style>
+</head>
+<body class="d-flex flex-column h-100">
+    <main class="flex-shrink-0">
+        <nav class="navbar navbar-expand-lg py-3 shadow-sm sticky-top">
+            <div class="container px-5">
+                <a class="navbar-brand" href="home.html">
+                    <span class="fw-bolder text-gradient">HabitHive</span>
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0 small fw-bolder align-items-center">
+                        <li class="nav-item"><a class="nav-link active" href="home.html">Home</a></li>
+                        <li class="nav-item"><a class="nav-link" href="todo.html">Daily</a></li>
+                        <li class="nav-item"><a class="nav-link" href="checklist.html">Monthly</a></li>
+                        <li class="nav-item"><a class="nav-link" href="progress.html">Progress</a></li>
+                        
+                        <li class="nav-item dropdown ms-lg-3">
+                            <div class="profile-menu">
+                                <i class="bi bi-person-circle fs-4 profile-icon text-primary"></i>
+                                <div class="profile-dropdown">
+                                    <div class="p-3">
+                                        <small class="text-muted d-block">User</small>
+                                        <strong id="userDisp">Guest</strong>
+                                        <hr class="my-2">
+                                        <a href="setting.html" class="dropdown-item py-2 small notlogout"><i class="bi bi-gear me-2"></i>Settings</a>
+                                        <a href="#" onclick="logout()" class="dropdown-item py-2 small logout-btn"><i class="bi bi-box-arrow-right me-2"></i>Logout</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <header class="hero-section py-5">
+            <div class="container px-5">
+                <div class="row gx-5 align-items-center">
+                    <div class="col-xxl-5 text-center text-xxl-start">
+                        <div class="badge theme-badge mb-3 px-3 py-2 rounded-pill">TRACK YOUR GROWTH</div>
+                        <h1 class="display-3 fw-bolder mb-4">
+                            <span class="text-gradient d-inline">Stay Consistent,</span><br>
+                            Build Better Habits
+                        </h1>
+                        <p class="lead text-muted mb-5">Join HabitHive to transform your daily routines into lasting achievements.</p>
+                        <div class="d-grid gap-3 d-sm-flex justify-content-sm-center justify-content-xxl-start">
+                            <a class="btn btn-primary btn-lg px-5 py-3 rounded-4 shadow-sm " href="todo.html">Start Daily Tasks</a>
+                            <a class="btn btn-outline-dark btn-lg px-5 py-3 rounded-4" href="checklist.html">Monthly View</a>
+                        </div>
+                    </div>
+                    <div class="col-xxl-7">
+                        <div class="hero-visual-container mt-5 mt-xxl-0 text-center">
+                             <div class="hero-blob mx-auto rounded-circle d-flex align-items-center justify-content-center" style="width: 250px; height: 250px;">
+                                <i class="bi bi-graph-up-arrow text-white" style="font-size: 5rem;"></i>
+                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+    </main>
+
+    <footer class="py-4 mt-auto border-top">
+        <div class="container px-5">
+            <div class="row align-items-center justify-content-between flex-column flex-sm-row">
+                <div class="col-auto">
+                    <div class="small m-0 text-muted">Copyright &copy; 2026 HabitHive.</div>
+                </div>
+                <div class="col-auto">
+                    <a class="small footer-link" href="#!">Privacy</a>
+                    <span class="text-muted mx-1">&middot;</span>
+                    <a class="small footer-link" href="#!">Terms</a>
+                    <span class="text-muted mx-1">&middot;</span>
+                    <a class="small footer-link" href="contact.html">Contact</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const firebaseConfig = { 
+            apiKey: "AIzaSyA0uV1yU0QnEQbs2hV1UrCYdZZXYnhaxKs",
+            authDomain: "habit-hive-c3a98.firebaseapp.com",
+            projectId: "habit-hive-c3a98",
+            storageBucket: "habit-hive-c3a98.firebasestorage.app",
+            messagingSenderId: "872810952968",
+            appId: "1:872810952968:web:9075bc84022ad7310f94bd"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        
+        const currentUser = localStorage.getItem("username") || "guest";
+        document.getElementById('userDisp').innerText = currentUser;
+
+        function applyThemeLocally(color, mode) {
+            document.documentElement.setAttribute('data-theme', mode);
+            document.documentElement.style.setProperty('--primary', color);
+            
+            // Re-apply gradient logic
+            document.querySelectorAll('.text-gradient').forEach(el => {
+                el.style.backgroundImage = `linear-gradient(45deg, ${color}, #6610f2)`;
+            });
+        }
+
+        // Fetch from Firebase for persistent cross-device sync
+        db.collection("userSettings").doc(currentUser).get().then(doc => {
+            if (doc.exists) {
+                const data = doc.data();
+                const color = data.themeColor || localStorage.getItem("themeColor") || "#4a90e2";
+                const mode = data.displayMode || localStorage.getItem("displayMode") || "light";
+                
+                applyThemeLocally(color, mode);
+                localStorage.setItem("themeColor", color);
+                localStorage.setItem("displayMode", mode);
+            }
+        });
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = "index.html";
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html data-theme="light" lang="en">
+<head>
+<script>
+    // 1. PREVENT FLASH: Apply theme and mode before page renders
+    const savedColor = localStorage.getItem("themeColor") || "#6366f1";
+    const savedMode = localStorage.getItem("displayMode") || "light";
+    document.documentElement.setAttribute('data-theme', savedMode);
+    
+    if (savedColor) {
+        document.documentElement.style.setProperty('--primary', savedColor);
+        const s = document.createElement('style');
+        s.innerHTML = `
+            :root { --primary: ${savedColor} !important; } 
+            .btn-primary, .feature { 
+                background-color: ${savedColor} !important; 
+                border-color: ${savedColor} !important; 
+            }
+            .navbar-brand .fw-bolder {
+                background: linear-gradient(45deg, ${savedColor}, #6610f2) !important;
+                -webkit-background-clip: text !important;
+                -webkit-text-fill-color: transparent !important;
+            }
+            .profile-icon { color: ${savedColor} !important; }
+        `;
+        document.head.appendChild(s);
+    }
+</script>
+
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>HabitHive | Contact</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="css/styles.css" rel="stylesheet" />
+
+<style>
+    /* 1. DEFINE THEME COLORS */
+    :root, [data-theme="light"] {
+        --bg-body: #f8fafc;
+        --bg-card: #ffffff;
+        --text-main: #1e293b;
+        --border-color: #e2e8f0;
+        --input-bg: #ffffff;
+    }
+
+    [data-theme="dark"] {
+        --bg-body: #0f172a;
+        --bg-card: #1e293b;
+        --text-main: #f1f5f9;
+        --border-color: #334155;
+        --input-bg: #0f172a;
+    }
+
+    /* 2. CORE STYLES */
+    body {
+        background-color: var(--bg-body) !important;
+        color: var(--text-main);
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        transition: 0.3s ease;
+    }
+
+    .navbar { 
+        background-color: var(--bg-card) !important; 
+        border-bottom: 1px solid var(--border-color) !important; 
+    }
+
+    /* 3. ADAPTIVE UNDERLINE LOGIC */
+    .nav-link { 
+        color: var(--text-main) !important; 
+        position: relative;
+        display: inline-block !important; /* Makes underline match text width */
+        padding-bottom: 5px !important;
+        transition: 0.3s;
+    }
+
+    /* Only apply underline to the active page (if you add 'active' class later) */
+    .nav-link.active::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 3px;
+        background-color: var(--primary);
+        border-radius: 10px;
+    }
+
+    /* 4. CONTACT CARD & INPUTS */
+    .contact-card {
+        background-color: var(--bg-card) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 24px;
+    }
+
+    .form-control {
+        background-color: var(--input-bg) !important;
+        color: var(--text-main) !important;
+        border: 2px solid var(--border-color) !important;
+        border-radius: 12px;
+    }
+
+    .form-control:focus {
+        border-color: var(--primary) !important;
+        box-shadow: 0 0 0 0.25rem rgba(var(--primary-rgb), 0.1);
+    }
+
+    /* 5. NAVBAR TOGGLER THEME SYNC */
+    .navbar-toggler { border-color: var(--border-color) !important; }
+    
+    [data-theme="dark"] .navbar-toggler-icon {
+        filter: invert(1) brightness(200%);
+    }
+
+    /* 6. RESPONSIVENESS PATCH */
+    @media (max-width: 991px) {
+        .navbar-collapse {
+            background: var(--bg-card);
+            margin-top: 15px;
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .nav-item { margin-bottom: 10px; }
+        
+        .profile-dropdown {
+            position: static;
+            border: none;
+            box-shadow: none;
+            padding-left: 0;
+        }
+
+        .profile-icon { display: none; } /* Clean up mobile view */
+    }
+
+    @media (max-width: 576px) {
+        .container.px-5 { padding-left: 1.5rem !important; padding-right: 1.5rem !important; }
+        .contact-card { padding: 2rem 1.5rem !important; }
+        .display-5 { font-size: 2rem; }
+    }
+</style>
+</head>
+
+<body class="d-flex flex-column h-100">
+    <main class="flex-shrink-0">
+        <nav class="navbar navbar-expand-lg py-3 sticky-top">
+            <div class="container px-5">
+                <a class="navbar-brand" href="home.html"><span class="fw-bolder">HabitHive</span></a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0 small fw-bolder align-items-center">
+                        <li class="nav-item"><a class="nav-link" href="home.html">Home</a></li>
+                        <li class="nav-item"><a class="nav-link" href="todo.html">Daily</a></li>
+                        <li class="nav-item"><a class="nav-link" href="checklist.html">Monthly</a></li>
+                        <li class="nav-item"><a class="nav-link" href="progress.html">Progress</a></li>
+                        <li class="nav-item">
+                            <div class="profile-menu ms-lg-3">
+                                <i class="bi bi-person-circle fs-4 profile-icon"></i>
+                                <div class="profile-dropdown">
+                                    <small class="text-muted d-block">User</small>
+                                    <strong id="usernameDisplay" style="color: var(--text-main)">Guest</strong>
+                                    <hr class="my-2" style="border-color: var(--border-color)">
+                                    <a href="setting.html" class="dropdown-item py-2 small" style="color: var(--text-main)"><i class="bi bi-gear me-2"></i>Settings</a>
+                                    <a href="#" onclick="logout()" class="dropdown-item py-2 small text-danger"><i class="bi bi-box-arrow-right me-2"></i>Logout</a>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <section class="py-5">
+            <div class="container px-5">
+                <div class="contact-card py-5 px-4 px-md-5">
+                    <div class="text-center mb-5">
+                        <div class="feature text-white rounded-4 mb-3 shadow-sm mx-auto d-flex align-items-center justify-content-center" style="width:60px; height:60px;">
+                            <i class="bi bi-envelope fs-4"></i>
+                        </div>
+                        <h1 class="fw-800 display-5">Get in touch</h1>
+                        <p class="lead fw-normal text-muted mb-0">Have questions? We're here to help.</p>
+                    </div>
+                    <div class="row gx-5 justify-content-center">
+                        <div class="col-lg-8 col-xl-6">
+                            <form id="contactForm">
+                                <div class="form-floating mb-3">
+                                    <input class="form-control" id="name" type="text" placeholder="Full Name" required />
+                                    <label for="name">Full name</label>
+                                </div>
+                                <div class="form-floating mb-3">
+                                    <input class="form-control" id="email" type="email" placeholder="name@example.com" required />
+                                    <label for="email">Email address</label>
+                                </div>
+                                <div class="form-floating mb-3">
+                                    <input class="form-control" id="phone" type="tel" placeholder="(123) 456-7890" required />
+                                    <label for="phone">Phone number</label>
+                                </div>
+                                <div class="form-floating mb-3">
+                                    <textarea class="form-control" id="message" placeholder="Message" style="height: 10rem" required></textarea>
+                                    <label for="message">Message</label>
+                                </div>
+                                <div id="statusMessage" class="mb-3"></div>
+                                <div class="d-grid"><button class="btn btn-primary btn-lg rounded-3" id="submitButton" type="submit">Send Message</button></div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="py-4 mt-auto border-top">
+        <div class="container px-5 text-center">
+            <div class="small m-0 text-muted">Copyright &copy; HabitHive 2026</div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Init Firebase and Vars
+        const currentUser = localStorage.getItem("username") || "Guest";
+        document.getElementById('usernameDisplay').textContent = currentUser;
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyA0uV1yU0QnEQbs2hV1UrCYdZZXYnhaxKs",
+            authDomain: "habit-hive-c3a98.firebaseapp.com",
+            projectId: "habit-hive-c3a98",
+            storageBucket: "habit-hive-c3a98.firebasestorage.app",
+            messagingSenderId: "872810952968",
+            appId: "1:872810952968:web:9075bc84022ad7310f94bd"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        emailjs.init("E6Tnv1KpKmxp1NxO7");
+
+        // Logout
+        function logout() {
+            localStorage.clear();
+            window.location.href = "index.html";
+        }
+
+        // Apply theme from DB
+        db.collection("userSettings").doc(currentUser).get().then(doc => {
+            if (doc.exists) {
+                const data = doc.data();
+                if (data.displayMode) {
+                    document.documentElement.setAttribute('data-theme', data.displayMode);
+                    localStorage.setItem("displayMode", data.displayMode);
+                }
+            }
+        });
+
+        // Form Submit
+        const contactForm = document.getElementById('contactForm');
+        contactForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const submitBtn = document.getElementById('submitButton');
+            const statusDiv = document.getElementById('statusMessage');
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = 'Sending...';
+
+            const formData = {
+                from_name: document.getElementById('name').value,
+                from_email: document.getElementById('email').value,
+                phone_number: document.getElementById('phone').value,
+                message: document.getElementById('message').value,
+                submitted_by: currentUser,
+                time: new Date().toLocaleString()
+            };
+
+            try {
+                await emailjs.send("service_5szb5ql", "template_d6d25es", formData);
+                await db.collection("contactMessages").add({
+                    ...formData,
+                    owner: currentUser,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                statusDiv.innerHTML = `<div class="alert alert-success border-0">Message sent!</div>`;
+                contactForm.reset();
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="alert alert-danger border-0">Error. Try again.</div>`;
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerText = "Send Message";
+            }
+        });
+    </script>
+</body>
+</html>

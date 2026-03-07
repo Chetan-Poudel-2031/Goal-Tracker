@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<script>
+    // 1. PREVENT FLASH: Apply theme and mode before page renders
+    const savedColor = localStorage.getItem("themeColor") || "#6366f1";
+    const savedMode = localStorage.getItem("displayMode") || "light";
+    document.documentElement.setAttribute('data-theme', savedMode);
+    
+    if (savedColor) {
+        document.documentElement.style.setProperty('--primary', savedColor);
+        const s = document.createElement('style');
+        s.innerHTML = `
+            :root { --primary: ${savedColor} !important; } 
+            
+            /* Buttons and Titles */
+            .todo-list__title, #add-btn { background: ${savedColor} !important; }
+            .text-gradient { 
+                background: linear-gradient(45deg, ${savedColor}, #6610f2) !important; 
+                -webkit-background-clip: text !important; 
+                -webkit-text-fill-color: transparent !important; 
+            }
+
+            /* Regular Nav Links - Neutral (Matching Checklist) */
+            .navbar-nav .nav-link:not(.settings-link) { 
+                color: var(--text) !important; 
+                opacity: 0.7; 
+                transition: 0.3s; 
+            }
+            .navbar-nav .nav-link:not(.settings-link):hover, 
+            .navbar-nav .nav-link.active { 
+                opacity: 1 !important; 
+            }
+
+            /* Settings Link - FORCED THEME COLOR */
+            a.nav-link.settings-link, 
+            a.nav-link.settings-link i { 
+                color: ${savedColor} !important; 
+                opacity: 0.9 !important; 
+                transition: 0.3s; 
+            }
+            
+            a.nav-link.settings-link:hover { 
+                opacity: 1 !important; 
+                transform: scale(1.05); 
+            }
+
+            /* Checkbox Styles */
+            input:checked + .check { border-color: ${savedColor} !important; }
+            input:checked + .check::after { border-color: ${savedColor} !important; }
+
+
+            /* Short Underline Aligned to the Left */
+/* Underline that matches text width */
+.nav-link {
+    display: inline-block !important; /* Forces the link to be only as wide as the text */
+    position: relative;
+    padding-bottom: 5px !important;
+}
+
+.nav-link.active::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%; /* Now matches the text width exactly */
+    height: 3px;
+    background-color: ${savedColor} !important;
+    border-radius: 10px;
+}
+        `;
+        document.head.appendChild(s);
+    }
+</script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HabitHive | To-Do</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Caveat+Brush&family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="css/styles.css">
+
+    <style>
+        :root {
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --border: #e2e8f0;
+            --section-bg: #f1f5f9;
+        }
+
+        [data-theme="dark"] {
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --text: #f1f5f9;
+            --border: #334155;
+            --section-bg: #0f172a;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            transition: 0.3s;
+        }
+
+        .navbar { border-bottom: 1px solid var(--border); background: var(--card-bg); }
+        .nav-link { color: var(--text) !important; }
+
+        .containertodo {
+            max-width: 600px;
+            width: 95%; 
+            margin: 40px auto; 
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 24px;
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        }
+
+        h2 { font-weight: 800; letter-spacing: -0.02em; }
+        h4 { color: #64748b; font-size: 0.95rem; margin-bottom: 25px; }
+
+        .todo-list {
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            background-color: var(--section-bg);
+        }
+
+        .todo-list__title {
+            padding: 4px 15px;
+            color: white;
+            border-radius: 8px;
+            font-family: 'Caveat Brush', cursive;
+            font-size: 1.2rem;
+        }
+
+        .todo-list__label {
+            display: flex;
+            align-items: center;
+            margin: 15px 0;
+            font-size: 17px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .todo-list__label input { position: absolute; opacity: 0; }
+
+        .check {
+            width: 22px;
+            height: 22px;
+            border: 2px solid var(--border);
+            margin-right: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--card-bg);
+            border-radius: 6px;
+            transition: 0.2s;
+        }
+
+        input:checked + .check::after {
+            content: "";
+            width: 6px;
+            height: 11px;
+            border: solid var(--primary);
+            border-width: 0 2.5px 2.5px 0;
+            transform: rotate(45deg);
+            margin-bottom: 3px;
+        }
+
+        input:checked ~ .todo-text { color: #94a3b8; text-decoration: line-through; }
+
+        input[type="text"] {
+            flex-grow: 1;
+            padding: 12px;
+            background: var(--section-bg);
+            color: var(--text);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            outline: none;
+        }
+
+        #add-btn {
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 12px;
+            font-weight: 700;
+            transition: 0.2s;
+            margin-left: 10px;
+        }
+
+        .hint { font-size: 11px; color: #94a3b8; text-align: center; margin-top: 15px; }
+        
+        .fw-800 { font-weight: 800 !important; }
+
+        #newTodoInput:focus {
+            background-color: var(--card-bg) !important; /* Keeps background consistent */
+            color: var(--text) !important;               /* Keeps text readable */
+            border-color: var(--primary) !important;     /* Changes border to theme color */
+            outline: 0 !important;                       /* Removes default browser outline */
+            box-shadow: 0 0 0 0.25rem rgba(var(--primary-rgb), 0.25) !important;
+        }
+        #newTodoInput{transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out !important;}
+
+        /* Navbar Toggler Icon Theme Sync */
+.navbar-toggler {
+    border-color: var(--border) !important;
+}
+
+/* In Light Mode (Default) */
+.navbar-toggler-icon {
+    filter: none;
+}
+
+/* In Dark Mode - Inverts the black icon to white */
+[data-theme="dark"] .navbar-toggler-icon {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+/* Ensure the button itself doesn't have a weird background */
+.navbar-toggler:focus {
+    box-shadow: 0 0 0 0.25rem rgba(var(--primary-rgb), 0.25);
+    outline: none;
+}
+
+
+
+.navbar-nav .nav-item {
+    margin-right: 15px; /* Adds space between the links */
+}
+
+/* Ensure the active link doesn't have the old border anymore */
+.nav-link.active {
+    border-bottom: none !important;
+}
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg sticky-top">
+    <div class="container px-5">
+        <a class="navbar-brand fw-800 text-gradient" href="home.html">HabitHive</a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav ms-auto mb-2 mb-lg-0 small fw-bolder">
+                <li class="nav-item"><a class="nav-link" href="home.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link active" href="todo.html">Daily</a></li>
+                <li class="nav-item"><a class="nav-link" href="checklist.html">Monthly</a></li>
+                <li class="nav-item"><a class="nav-link" href="progress.html">Progress</a></li>
+                <li class="nav-item"><a class="nav-link settings-link" href="setting.html"><i class="bi bi-gear-fill"></i> Settings</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="containertodo">
+    <div class="header-top d-flex align-items-center justify-content-center position-relative mb-4">
+        <a href="home.html" class="position-absolute start-0 text-muted"><i class="bi bi-arrow-left fs-4"></i></a>
+        <h2 class="text-gradient m-0">Daily Todo List</h2>
+    </div>
+
+    <h4 class="text-center">Start your day with some tasks and stay organized!</h4>
+
+    <fieldset class="todo-list">
+        <legend class="todo-list__title">Tasks</legend>
+        <div id="todoContainer"></div>
+    </fieldset>
+
+    <div class="input-group d-flex">
+        <input type="text" id="newTodoInput" placeholder="Enter a new task...">
+        <button id="add-btn" onclick="submitNewTodo()">Add</button>
+    </div>
+    
+    <div class="hint">Double-click a task to delete it</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Firebase Config
+    const firebaseConfig = {
+        apiKey: "AIzaSyA0uV1yU0QnEQbs2hV1UrCYdZZXYnhaxKs",
+        authDomain: "habit-hive-c3a98.firebaseapp.com",
+        projectId: "habit-hive-c3a98",
+        storageBucket: "habit-hive-c3a98.firebasestorage.app",
+        messagingSenderId: "872810952968",
+        appId: "1:872810952968:web:9075bc84022ad7310f94bd"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const todoContainer = document.getElementById("todoContainer");
+    const newTodoInput = document.getElementById("newTodoInput");
+    const currentUser = localStorage.getItem("username") || "guest";
+
+    // 1. Sync Theme from Database (Update local storage if DB is newer)
+    db.collection("userSettings").doc(currentUser).get().then(doc => {
+        if (doc.exists) {
+            const data = doc.data();
+            if (data.themeColor) localStorage.setItem("themeColor", data.themeColor);
+            if (data.displayMode) localStorage.setItem("displayMode", data.displayMode);
+        }
+    });
+
+    async function checkDailyReset() {
+        const today = new Date().toLocaleDateString();
+        const lastReset = localStorage.getItem(`lastReset_${currentUser}`);
+        if (lastReset && lastReset !== today) {
+            const snapshot = await db.collection("dailyTasks").where("owner", "==", currentUser).get();
+            if (!snapshot.empty) {
+                const batch = db.batch();
+                let completed = 0;
+                snapshot.forEach(doc => {
+                    if (doc.data().done) completed++;
+                    batch.update(doc.ref, { done: false });
+                });
+                const percent = Math.round((completed / snapshot.size) * 100);
+                await db.collection("progressHistory").add({
+                    owner: currentUser, date: lastReset, percent: percent,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                await batch.commit();
+            }
+            localStorage.setItem(`lastReset_${currentUser}`, today);
+        } else if (!lastReset) {
+            localStorage.setItem(`lastReset_${currentUser}`, today);
+        }
+    }
+
+    checkDailyReset().then(() => {
+        db.collection("dailyTasks").where("owner", "==", currentUser).orderBy("createdAt", "asc")
+            .onSnapshot((snapshot) => {
+                todoContainer.innerHTML = "";
+                snapshot.forEach((doc) => {
+                    const task = doc.data();
+                    const id = doc.id;
+                    const label = document.createElement("label");
+                    label.className = "todo-list__label";
+                    label.ondblclick = () => deleteTask(id);
+                    label.innerHTML = `
+                        <input type="checkbox" ${task.done ? 'checked' : ''} onchange="toggleTask('${id}', ${task.done})">
+                        <i class="check"></i>
+                        <span class="todo-text">${task.text || ''}</span>
+                    `;
+                    todoContainer.appendChild(label);
+                });
+            });
+    });
+
+    window.submitNewTodo = function() {
+        const val = newTodoInput.value.trim();
+        if(val) {
+            db.collection("dailyTasks").add({
+                text: val, done: false, owner: currentUser,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            newTodoInput.value = "";
+        }
+    };
+
+    window.toggleTask = (id, status) => db.collection("dailyTasks").doc(id).update({ done: !status });
+    window.deleteTask = (id) => confirm("Delete this task?") && db.collection("dailyTasks").doc(id).delete();
+    newTodoInput.addEventListener("keydown", (e) => { if(e.key === "Enter") submitNewTodo(); });
+</script>
+</body>
+</html>

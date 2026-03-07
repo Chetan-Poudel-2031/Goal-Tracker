@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<script>
+    // 1. PREVENT FLASH: Apply theme and mode before page renders
+    const savedColor = localStorage.getItem("themeColor") || "#6366f1";
+    const savedMode = localStorage.getItem("displayMode") || "light";
+    document.documentElement.setAttribute('data-theme', savedMode);
+    
+    if (savedColor) {
+        document.documentElement.style.setProperty('--primary', savedColor);
+        const s = document.createElement('style');
+        // Force the primary color onto buttons and gradients
+        s.innerHTML = `
+            :root{--primary:${savedColor}!important} 
+            .btn-hive, .btn-submit {background: ${savedColor}!important; border:none!important; color:white!important;}
+            .text-gradient {background: linear-gradient(45deg, ${savedColor}, #6610f2)!important; -webkit-background-clip: text!important; -webkit-text-fill-color: transparent!important;}
+        `;
+        document.head.appendChild(s);
+    }
+</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Habit-Hive | Login</title>
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <link rel="stylesheet" href="css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet" />
+
+    <style>
+        :root {
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --border: #e2e8f0;
+            --input-bg: #ffffff;
+        }
+
+        [data-theme="dark"] {
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --text: #f1f5f9;
+            --border: #334155;
+            --input-bg: #0f172a;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            transition: background-color 0.3s;
+        }
+
+        .header-top { margin-bottom: 30px; text-align: center; }
+        
+        #title { 
+            font-size: 3rem; 
+            font-weight: 800;
+            text-decoration: none;
+            letter-spacing: -0.04em;
+        }
+
+        .logcontainer {
+            width: 100%;
+            max-width: 400px;
+            padding: 40px;
+            background: var(--card-bg);
+            border-radius: 24px;
+            border: 1px solid var(--border);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: 0.3s;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px;
+            margin: 10px 0;
+            background-color: var(--input-bg);
+            color: var(--text);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            outline: none;
+            transition: 0.2s;
+        }
+
+        input:focus {
+            border-color: var(--primary) !important;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 14px;
+            font-weight: 700;
+            margin-top: 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.1);
+        }
+
+        #switchText { margin-top: 25px; font-size: 14px; color: #64748b; }
+        #toggleForm { cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body> 
+    <div class="header-top">
+        <a id="title" class="text-gradient">Habit-Hive</a>
+    </div>
+
+    <div class="logcontainer">
+        <h2 id="formTitle" class="fw-bold mb-4">Sign Up</h2>
+
+        <input type="text" id="username" placeholder="Username">
+        <input type="password" id="password" placeholder="Password">
+
+        <button id="mainBtn" class="btn-submit">Sign Up</button>
+
+        <p id="switchText">
+            Already have an account? 
+            <span id="toggleForm" class="text-gradient">Login</span>
+        </p>
+    </div>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyA0uV1yU0QnEQbs2hV1UrCYdZZXYnhaxKs",
+        authDomain: "habit-hive-c3a98.firebaseapp.com",
+        projectId: "habit-hive-c3a98",
+        storageBucket: "habit-hive-c3a98.firebasestorage.app",
+        messagingSenderId: "872810952968",
+        appId: "1:872810952968:web:9075bc84022ad7310f94bd"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // 1. LOGIN/SIGNUP LOGIC
+    let isLogin = false;
+    const formTitle = document.getElementById("formTitle");
+    const mainBtn = document.getElementById("mainBtn");
+    const switchText = document.getElementById("switchText");
+
+    mainBtn.addEventListener("click", async () => {
+        const userVal = document.getElementById("username").value.trim();
+        const passVal = document.getElementById("password").value.trim();
+
+        if (!userVal || !passVal) return alert("Please fill all fields");
+
+        try {
+            if (isLogin) {
+                const userDoc = await db.collection("users").doc(userVal).get();
+                if (userDoc.exists && userDoc.data().password === passVal) {
+                    localStorage.setItem("username", userVal);
+                    // Fetch settings to sync LocalStorage before moving to home
+                    const settings = await db.collection("userSettings").doc(userVal).get();
+                    if(settings.exists) {
+                        localStorage.setItem("themeColor", settings.data().themeColor || "#6366f1");
+                        localStorage.setItem("displayMode", settings.data().displayMode || "light");
+                    }
+                    window.location.href = "home.html";
+                } else { alert("Invalid credentials"); }
+            } else {
+                const userDoc = await db.collection("users").doc(userVal).get();
+                if (userDoc.exists) { alert("Username already exists!"); }
+                else {
+                    await db.collection("users").doc(userVal).set({ username: userVal, password: passVal });
+                    localStorage.setItem("username", userVal);
+                    window.location.href = "home.html";
+                }
+            }
+        } catch (e) { console.error(e); }
+    });
+
+    // Handle Toggle Sign Up / Login
+    document.addEventListener("click", (e) => {
+        if (e.target && e.target.id === "toggleForm") {
+            isLogin = !isLogin;
+            formTitle.textContent = isLogin ? "Login" : "Sign Up";
+            mainBtn.textContent = isLogin ? "Login" : "Sign Up";
+            switchText.innerHTML = isLogin 
+                ? `Don't have an account? <span id="toggleForm" class="text-gradient">Sign Up</span>`
+                : `Already have an account? <span id="toggleForm" class="text-gradient">Login</span>`;
+        }
+    });
+</script>
+</body>
+</html>
