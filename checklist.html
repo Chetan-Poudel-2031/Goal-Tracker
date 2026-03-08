@@ -47,6 +47,13 @@
     background-color: ${savedColor} !important;
     border-radius: 10px;
 }
+
+/* Update this line in your script's s.innerHTML */
+#add-btn { 
+    background: ${savedColor} !important; 
+    border: 1px solid ${savedColor} !important; /* Force border to match background */
+    box-shadow: none !important; /* Removes any shadow that might look like a border */
+}
         `;
         document.head.appendChild(s);
     }
@@ -345,3 +352,4 @@
 </body>
 
 </html>
+
