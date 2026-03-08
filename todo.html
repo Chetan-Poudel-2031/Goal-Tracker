@@ -278,9 +278,9 @@
         <div id="todoContainer"></div>
     </fieldset>
 
-    <div class="input-group d-flex">
-        <input type="text" id="newTodoInput" placeholder="Enter a new task...">
-        <button id="add-btn" onclick="submitNewTodo()">Add</button>
+    <div class="d-flex flex-column flex-sm-row gap-2 mt-4">
+        <input type="text" id="newTodoInput" placeholder="Enter a new task..." class="flex-grow-1">
+        <button id="add-btn" onclick="submitNewTodo()" class="mx-auto mx-sm-0">Add</button>
     </div>
     
     <div class="hint">Double-click a task to delete it</div>
@@ -373,4 +373,5 @@
     newTodoInput.addEventListener("keydown", (e) => { if(e.key === "Enter") submitNewTodo(); });
 </script>
 </body>
+
 </html>
