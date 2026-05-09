@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+    // THE GATEKEEPER: Check if user is logged in
+    (function() {
+        const currentUser = localStorage.getItem("username");
+        
+        if (!currentUser) {
+            // If no username is found in storage, kick them back to login
+            window.location.href = "index.html";
+        }
+    })();
+</script>
+<script>
+    // 1. PREVENT FLASH: Apply theme and mode before page renders
+    const savedColor = localStorage.getItem("themeColor") || "#6366f1";
+    const savedMode = localStorage.getItem("displayMode") || "light";
+    document.documentElement.setAttribute('data-theme', savedMode);
+    
+    if (savedColor) {
+        document.documentElement.style.setProperty('--primary', savedColor);
+        const s = document.createElement('style');
+        s.innerHTML = `
+            :root { --primary: ${savedColor} !important; } 
+            
+            /* Navbar Base Styles */
+            .navbar-nav .nav-link:not(.settings-link) { 
+                color: var(--text) !important; 
+                opacity: 0.7; 
+                transition: 0.3s; 
+                display: inline-block !important;
+                position: relative;
+                padding-bottom: 5px !important;
+                border-bottom: none !important; /* Remove any old borders */
+            }
+
+            .navbar-nav .nav-link:hover, 
+            .navbar-nav .nav-link.active { 
+                opacity: 1 !important; 
+            }
+
+            /* Settings Link - Always themed */
+            a.nav-link.settings-link, 
+            a.nav-link.settings-link i { 
+                color: ${savedColor} !important; 
+                opacity: 0.9 !important; 
+            }
+
+            /* THE UNDERLINE: Exactly like todo.html */
+            .nav-link.active::after {
+                content: "";
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                width: 100%; 
+                height: 3px;
+                background-color: ${savedColor} !important;
+                border-radius: 10px;
+            }
+
+            /* UI Elements Theme Sync */
+            .btn-outline-primary { border-color: ${savedColor} !important; color: ${savedColor} !important; }
+            .btn-outline-primary:hover { background-color: ${savedColor} !important; color: white !important; }
+            .progress-bar { background-color: ${savedColor} !important; }
+            .stat-circle { color: ${savedColor} !important; }
+            .text-gradient { 
+                background: linear-gradient(45deg, ${savedColor}, #6610f2) !important; 
+                -webkit-background-clip: text !important; 
+                -webkit-text-fill-color: transparent !important; 
+            }
+        `;
+        document.head.appendChild(s);
+    }
+</script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+    <script>
+      const firebaseConfig = {
+        apiKey: "AIzaSyA0uV1yU0QnEQbs2hV1UrCYdZZXYnhaxKs",
+        authDomain: "habit-hive-c3a98.firebaseapp.com",
+        projectId: "habit-hive-c3a98",
+        storageBucket: "habit-hive-c3a98.firebasestorage.app",
+        messagingSenderId: "872810952968",
+        appId: "1:872810952968:web:9075bc84022ad7310f94bd",
+        measurementId: "G-LE86ZLX8N0"
+      };
+
+      firebase.initializeApp(firebaseConfig);
+      const db = firebase.firestore();
+    </script>
+    <title>HabitHive | Progress</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    :root {
+        --bg: #f8fafc;
+        --card-bg: #ffffff;
+        --text: #1e293b;
+        --border: #e2e8f0;
+        --muted: #64748b;
+        --progress-empty: rgba(0, 0, 0, 0.1); /* Light mode empty bar */
+    }
+
+    [data-theme="dark"] {
+        --bg: #0f172a;
+        --card-bg: #1e293b;
+        --text: #f1f5f9;
+        --border: #334155;
+        --muted: #94a3b8;
+        --progress-empty: rgba(255, 255, 255, 0.1); /* Dark mode empty bar */
+    }
+
+    body {
+        background-color: var(--bg);
+        color: var(--text);
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        transition: 0.3s;
+    }
+
+    .navbar { border-bottom: 1px solid var(--border); background: var(--card-bg) !important; }
+    
+    .progress-card {
+        background: var(--card-bg);
+        border-radius: 24px;
+        padding: 35px;
+        border: 1px solid var(--border);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        margin-top: 30px;
+        margin-bottom: 30px;
+    }
+
+    /* Progress Bar Improvements */
+    .progress { 
+        background-color: var(--progress-empty) !important; 
+        height: 20px; 
+        border-radius: 50px; 
+        overflow: hidden;
+    }
+
+    .stat-circle { font-size: 3rem; font-weight: 800; }
+    .history-title { font-weight: 800; color: var(--text); }
+    .history-icon { color: var(--text); opacity: 0.8; }
+    .text-muted { color: var(--muted) !important; }
+    
+    .chart-wrapper { position: relative; height: 40vh; width: 100%; margin: 20px 0; }
+
+
+    /* Navbar Toggler Icon Theme Sync */
+.navbar-toggler {
+    border-color: var(--border) !important;
+}
+
+/* In Light Mode (Default) */
+.navbar-toggler-icon {
+    filter: none;
+}
+
+/* In Dark Mode - Inverts the black icon to white */
+[data-theme="dark"] .navbar-toggler-icon {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+/* Ensure the button itself doesn't have a weird background */
+.navbar-toggler:focus {
+    box-shadow: 0 0 0 0.25rem rgba(var(--primary-rgb), 0.25);
+    outline: none;
+}
+
+.navbar-nav .nav-item {
+    margin-right: 15px; /* Adds space between the links */
+}
+
+/* Ensure the active link doesn't have the old border anymore */
+.nav-link.active {
+    border-bottom: none !important;
+}
+
+.btn-history {
+    background: transparent;
+    color: var(--primary);
+    border: 2px solid var(--primary);
+    padding: 12px 25px;
+    border-radius: 12px;
+    font-weight: 700;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+}
+
+.btn-history:hover {
+    background: var(--primary);
+    color: white !important;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+/* Ensure the icon and text are aligned */
+.btn-history i {
+    font-size: 1.2rem;
+}
+</style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-light bg-white py-3 shadow-sm sticky-top">
+    <div class="container px-5">
+        <a class="navbar-brand" href="home.html">
+            <span class="fw-bolder text-gradient">Habit-Hive</span>
+        </a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav ms-auto mb-2 mb-lg-0 small fw-bolder">
+                <li class="nav-item"><a class="nav-link" href="home.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="todo.html">Daily</a></li>
+                <li class="nav-item"><a class="nav-link" href="checklist.html">Monthly</a></li>
+                <li class="nav-item"><a class="nav-link active" href="progress.html">Progress</a></li>
+                <li class="nav-item"><a class="nav-link settings-link" href="setting.html"><i class="bi bi-gear-fill"></i> Settings</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10 col-lg-8">
+            <div class="progress-card text-center">
+                <h2 class="fw-bold mb-4">Daily Goal Progress</h2>
+                <div class="stat-circle mb-2"><span id="percentText">0</span>%</div>
+                <p class="text-muted mb-4">You have completed <span id="completedCount">0</span> tasks today.</p>
+                
+                <div class="progress mb-4" style="height: 20px; border-radius: 50px;">
+                    <div id="mainProgressBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                </div>
+
+                <div class="row text-center mb-4">
+                    <div class="col-6 border-end">
+                        <small class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">Total Tasks</small>
+                        <h5 class="mb-0 fw-bold" id="totalTasks">0</h5>
+                        
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">Remaining</small>
+                        <h5 class="mb-0 fw-bold" id="remainingTasks">0</h5>
+                        
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button onclick="window.location.href='todo.html'" class="btn btn-outline-primary shadow-sm py-2">
+                        <i class="bi bi-calendar-check me-2"></i>Manage Daily Tasks
+                    </button>
+                </div>
+            </div>
+
+            <div class="progress-card">
+                <h4 class="history-title mb-4">
+                    <i class="bi bi-calendar-event-fill history-icon me-2"></i>Past 7 Days
+                </h4>
+                <div id="historyList" class="list-group list-group-flush">
+                    <div class="text-center py-3 text-muted small">No history available!</div>
+                </div>
+            </div>
+
+            <div class="progress-card">
+                <div class="text-center mb-4">
+                    <h2 class="fw-bold mb-1">Monthly Habits</h2>
+                    <p class="text-muted small">Total days checked per habit</p>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="progressChart"></canvas>
+                </div>
+                <div class="d-grid gap-2">
+                    <button onclick="window.location.href='checklist.html'" class="btn btn-outline-primary shadow-sm py-2">Manage Monthly Checklist</button>
+                </div>
+                <div class="text-center mt-4">
+                    <button onclick="window.location.href='history_checklist.html'" class="btn-history shadow-sm">
+                        <i class="bi bi-clock-history me-2"></i> View Past Months History
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const currentUser = localStorage.getItem("username") || "guest";
+    let themeColor = localStorage.getItem("themeColor") || "#6366f1";
+
+    // --- 1. THEME SYNC ---
+    db.collection("userSettings").doc(currentUser).get().then(doc => {
+        if (doc.exists && doc.data().themeColor) {
+            themeColor = doc.data().themeColor;
+            document.documentElement.style.setProperty('--primary', themeColor);
+            renderMonthlyChart();
+        } else {
+            renderMonthlyChart();
+        }
+    });
+
+    // --- 2. THE MIDNIGHT RESET LOGIC ---
+    async function checkDailyReset() {
+        const today = new Date().toLocaleDateString();
+        const lastReset = localStorage.getItem(`lastReset_${currentUser}`);
+
+        // If today is a different day than the last time we opened the app
+        if (lastReset && lastReset !== today) {
+            const snapshot = await db.collection("dailyTasks").where("owner", "==", currentUser).get();
+            
+            if (!snapshot.empty) {
+                let completed = 0;
+                const total = snapshot.size;
+                const batch = db.batch();
+
+                snapshot.forEach(doc => {
+                    if (doc.data().done === true) completed++;
+                    // Reset tasks for the new day
+                    batch.update(doc.ref, { done: false });
+                });
+
+                const percentage = Math.round((completed / total) * 100);
+
+                // Save yesterday's performance to history
+                await db.collection("progressHistory").add({
+                    owner: currentUser,
+                    date: lastReset, 
+                    percent: percentage,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                await batch.commit();
+            }
+            localStorage.setItem(`lastReset_${currentUser}`, today);
+            location.reload(); // Refresh to show reset state
+        } else if (!lastReset) {
+            localStorage.setItem(`lastReset_${currentUser}`, today);
+        }
+    }
+
+    // --- 3. LOAD THE 7-DAY HISTORY LIST ---
+    async function loadHistory() {
+        const historyList = document.getElementById('historyList');
+        const snapshot = await db.collection("progressHistory")
+            .where("owner", "==", currentUser)
+            .orderBy("timestamp", "desc")
+            .limit(7)
+            .get();
+
+        if (snapshot.empty) return;
+
+        historyList.innerHTML = ""; // Clear the "No history" message
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const itemHTML = `
+                <div class="list-group-item bg-transparent border-0 px-0 mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="small fw-bold">${data.date}</span>
+                        <span class="small fw-800" style="color: var(--primary)">${data.percent}%</span>
+                    </div>
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar" style="width: ${data.percent}%"></div>
+                    </div>
+                </div>
+            `;
+            historyList.insertAdjacentHTML('beforeend', itemHTML);
+        });
+    }
+
+    // --- 4. PROGRESS & CHART LOGIC (Existing) ---
+    async function updateProgress() {
+        const snapshot = await db.collection("dailyTasks").where("owner", "==", currentUser).get();
+        const total = snapshot.size;
+        let completed = 0;
+        snapshot.forEach(doc => { if(doc.data().done === true) completed++; });
+
+        const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+        document.getElementById('percentText').textContent = percentage;
+        document.getElementById('completedCount').textContent = completed;
+        document.getElementById('totalTasks').textContent = total;
+        document.getElementById('remainingTasks').textContent = total - completed;
+        document.getElementById('mainProgressBar').style.width = percentage + "%";
+    }
+
+    async function renderMonthlyChart() {
+        const ctx = document.getElementById('progressChart').getContext('2d');
+        const snapshot = await db.collection("monthlyTasks").where("owner", "==", currentUser).get();
+        const labels = [];
+        const dataValues = [];
+        snapshot.forEach(doc => {
+            labels.push(doc.data().name);
+            const count = doc.data().days ? doc.data().days.filter(d => d === true).length : 0;
+            dataValues.push(count);
+        });
+
+        if (window.myProgressChart) window.myProgressChart.destroy();
+        window.myProgressChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: dataValues,
+                    backgroundColor: themeColor,
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { beginAtZero: true, max: 31, grid: { display: false } },
+                    y: { grid: { display: false } }
+                }
+            }
+        });
+    }
+
+    // Initialize all functions on load
+    document.addEventListener('DOMContentLoaded', async () => {
+        await checkDailyReset(); // 1. Check for midnight first
+        updateProgress();       // 2. Show today's stats
+        loadHistory();          // 3. Show the 7-day history
+    });
+</script>
+</body>
+</html>

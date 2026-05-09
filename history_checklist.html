@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script>
+    // THE GATEKEEPER: Check if user is logged in
+    (function() {
+        const currentUser = localStorage.getItem("username");
+        
+        if (!currentUser) {
+            // If no username is found in storage, kick them back to login
+            window.location.href = "index.html";
+        }
+    })();
+</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HabitHive | Archive</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+    <script>
+        // 1. Firebase Configuration (Matches your checklist.html)
+        const firebaseConfig = {
+            apiKey: "AIzaSyA0uV1yU0QnEQbs2hV1UrCYdZZXYnhaxKs",
+            authDomain: "habit-hive-c3a98.firebaseapp.com",
+            projectId: "habit-hive-c3a98",
+            storageBucket: "habit-hive-c3a98.firebasestorage.app",
+            messagingSenderId: "872810952968",
+            appId: "1:872810952968:web:9075bc84022ad7310f94bd"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // 2. Theme & Identity
+        const currentUser = localStorage.getItem("username") || "guest";
+        const savedColor = localStorage.getItem("themeColor") || "#6366f1";
+        const savedMode = localStorage.getItem("displayMode") || "light";
+        document.documentElement.setAttribute('data-theme', savedMode);
+
+        // Apply Theme Styles
+        const style = document.createElement('style');
+        style.innerHTML = `
+            :root {
+                --primary: ${savedColor};
+                --bg: ${savedMode === 'dark' ? '#0f172a' : '#f8fafc'};
+                --card-bg: ${savedMode === 'dark' ? '#1e293b' : '#ffffff'};
+                --text: ${savedMode === 'dark' ? '#f1f5f9' : '#1e293b'};
+                --border: ${savedMode === 'dark' ? '#334155' : '#e2e8f0'};
+            }
+            body { 
+                background-color: var(--bg); 
+                color: var(--text); 
+                font-family: 'Plus Jakarta Sans', sans-serif; 
+                transition: 0.3s;
+            }
+            .text-gradient { 
+                background: linear-gradient(45deg, var(--primary), #6610f2); 
+                -webkit-background-clip: text; 
+                -webkit-text-fill-color: transparent; 
+            }
+            .archive-card {
+                background: var(--card-bg);
+                border-radius: 24px;
+                padding: 30px;
+                margin-bottom: 40px;
+                border: 1px solid var(--border);
+                box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            }
+            .table-wrapper { overflow-x: auto; border-radius: 12px; border: 1px solid var(--border); }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 0; }
+            th, td { border: 1px solid var(--border); padding: 10px; text-align: center; font-size: 0.85rem; }
+            th { background: rgba(0,0,0,0.05); color: #64748b; }
+            .habit-name-col { 
+                text-align: left; 
+                font-weight: 700; 
+                min-width: 150px; 
+                position: sticky; 
+                left: 0; 
+                background: var(--card-bg); 
+                z-index: 2;
+            }
+            .locked-check { color: var(--primary); font-size: 1.1rem; }
+            .locked-empty { opacity: 0.2; font-size: 1.1rem; }
+        `;
+        document.head.appendChild(style);
+    </script>
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg py-3 shadow-sm mb-5" style="background: var(--card-bg); border-bottom: 1px solid var(--border);">
+        <div class="container px-5">
+            <a class="navbar-brand fw-bolder text-gradient" href="home.html">HabitHive</a>
+            <div class="ms-auto">
+                <a href="progress.html" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-2"></i>Back to Progress</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="text-center mb-5">
+            <h1 class="fw-800 text-gradient">Journey Archive</h1>
+            <p class="text-muted">Your completed monthly habit logs are locked and preserved here.</p>
+        </div>
+
+        <div id="historyContainer">
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="mt-2 text-muted">Retrieving your history...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function loadArchives() {
+            const container = document.getElementById('historyContainer');
+            
+            try {
+                const snapshot = await db.collection("monthlyHistory")
+                    .where("owner", "==", currentUser)
+                    .orderBy("timestamp", "desc")
+                    .get();
+
+                if (snapshot.empty) {
+                    container.innerHTML = `
+                        <div class="text-center py-5">
+                            <i class="bi bi-archive text-muted" style="font-size: 3rem;"></i>
+                            <p class="mt-3 text-muted">No past months archived yet. Finish this month to see your first entry!</p>
+                            <a href="checklist.html" class="btn btn-primary mt-3">Go to Checklist</a>
+                        </div>`;
+                    return;
+                }
+
+                container.innerHTML = ""; // Clear loader
+
+                snapshot.forEach(doc => {
+                    const monthData = doc.data();
+                    let tableHTML = `
+                        <div class="archive-card">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h2 class="fw-bold m-0">${monthData.monthName}</h2>
+                                <span class="badge rounded-pill bg-light text-dark border">Archived Snapshot</span>
+                            </div>
+                            <div class="table-wrapper">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th class="habit-name-col">Habit</th>
+                                            ${Array.from({length: 30}, (_, i) => `<th>${i+1}</th>`).join('')}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                    `;
+
+                    // Loop through tasks saved in this month
+                    monthData.tasks.forEach(task => {
+                        tableHTML += `<tr><td class="habit-name-col">${task.name}</td>`;
+                        
+                        // Render icons instead of interactive checkboxes
+                        task.days.forEach(dayChecked => {
+                            const iconClass = dayChecked ? 'bi-check-square-fill locked-check' : 'bi-square locked-empty';
+                            tableHTML += `<td><i class="bi ${iconClass}"></i></td>`;
+                        });
+
+                        tableHTML += `</tr>`;
+                    });
+
+                    tableHTML += `
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="mt-3 text-end">
+                                <small class="text-muted">Preserved on: ${monthData.timestamp?.toDate().toLocaleDateString() || 'N/A'}</small>
+                            </div>
+                        </div>`;
+                    
+                    container.insertAdjacentHTML('beforeend', tableHTML);
+                });
+
+            } catch (error) {
+                console.error("Error loading history:", error);
+                container.innerHTML = `<div class="alert alert-danger">Error loading history. Please check your console.</div>`;
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', loadArchives);
+    </script>
+</body>
+</html>
